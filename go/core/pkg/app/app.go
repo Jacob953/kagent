@@ -182,6 +182,10 @@ func Run(ctx context.Context, input *apiv1.ControllerConfig, opts Options) error
 	if err != nil {
 		return err
 	}
+	compilerSettings.Images, err = builtinImages(cfg.GetHarnessImages(), version.Version)
+	if err != nil {
+		return err
+	}
 	telemetryOptions := telemetry.Options{Config: config.Telemetry(cfg.GetTelemetry()), Defaults: []attribute.KeyValue{
 		semconv.ServiceName("kagent-controller"), semconv.ServiceNamespace("kagent"), semconv.ServiceVersion(version.Version),
 	}}
