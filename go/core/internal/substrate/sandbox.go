@@ -6,14 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	atev1alpha1 "github.com/agent-substrate/substrate/pkg/api/v1alpha1"
 	"github.com/agent-substrate/substrate/pkg/proto/ateapipb"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kagent-dev/kagent/go/api/v1alpha3"
+	"github.com/kagent-dev/kagent/go/core/internal/egress"
 )
 
 // SandboxPolicy is operator-owned. Its resolved values are pinned in each revision.
@@ -32,13 +35,14 @@ type sandboxInputs struct {
 	Spec      v1alpha3.SandboxTemplateSpec
 	Class     atev1alpha1.SandboxClass
 	Policy    SandboxPolicy
+	Egress    egress.Access
 }
 
 var pinnedSandboxImage = regexp.MustCompile(`^[^\s@]+@sha256:[a-f0-9]{64}$`)
 
 // SandboxActorTemplate compiles standalone inputs without an Agent Card or Harness.
 // The image's entrypoint is replaced by the pinned, platform-managed guest.
-func SandboxActorTemplate(template *v1alpha3.SandboxTemplate, class atev1alpha1.SandboxClass, policy SandboxPolicy) (*ateapipb.ActorTemplate, string, json.RawMessage, error) {
+func SandboxActorTemplate(template *v1alpha3.SandboxTemplate, class atev1alpha1.SandboxClass, policy SandboxPolicy, access egress.Access) (*ateapipb.ActorTemplate, string, json.RawMessage, error) {
 	if !pinnedSandboxImage.MatchString(policy.GuestImage) || !pinnedSandboxImage.MatchString(template.Spec.Workload.Image) {
 		return nil, "", nil, fmt.Errorf("sandbox workload and guest images must be pinned by sha256 digest")
 	}
@@ -71,7 +75,13 @@ func SandboxActorTemplate(template *v1alpha3.SandboxTemplate, class atev1alpha1.
 	}
 	// Namespace-scoped placement changes immutable template contents, so it
 	// needs a new revision even when the operator's inputs stay the same.
-	inputs := sandboxInputs{Kind: "sandbox", Version: 2, Namespace: template.Namespace, Name: template.Name, UID: string(template.UID), Spec: template.Spec, Class: class, Policy: policy}
+	access, err = egress.CanonicalAccess(access.Destinations, access.Credentials)
+	if err != nil {
+		return nil, "", nil, err
+	}
+	spec := template.Spec.DeepCopy()
+	slices.SortFunc(spec.EgressPolicyRefs, func(a, b corev1.LocalObjectReference) int { return strings.Compare(a.Name, b.Name) })
+	inputs := sandboxInputs{Kind: "sandbox", Version: 3, Namespace: template.Namespace, Name: template.Name, UID: string(template.UID), Spec: *spec, Class: class, Policy: policy, Egress: access}
 	snapshot, err := json.Marshal(inputs)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("encode sandbox inputs: %w", err)
