@@ -3,11 +3,11 @@ package a2a
 import (
 	"cmp"
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"reflect"
 	"slices"
-	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -1704,6 +1704,7 @@ func spansByName(spans tracetest.SpanStubs) map[string]tracetest.SpanStub {
 	}
 	return named
 }
+
 type tracedPendingTurn struct {
 	*fakePendingTurn
 	origin runtime.TraceOrigin
