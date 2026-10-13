@@ -7,11 +7,11 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/kagent-dev/kagent/go/api/adk"
-	apiv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/api/v1alpha1"
+	configv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/config/v1"
 	"github.com/kagent-dev/kagent/go/core/pkg/config"
 )
 
-func TelemetryConfigFromSettings(cfg *apiv1.TelemetryConfig) (TelemetryConfig, error) {
+func TelemetryConfigFromSettings(cfg *configv1.TelemetryConfig) (TelemetryConfig, error) {
 	result := TelemetryConfig{}
 	if cfg == nil {
 		return result, nil
@@ -22,7 +22,7 @@ func TelemetryConfigFromSettings(cfg *apiv1.TelemetryConfig) (TelemetryConfig, e
 	result.CaptureRawAPIBodies = cfg.GetCaptureRawApiBodies()
 	result.OpenAINativeTracing = cfg.GetOpenaiNativeTracing()
 	result.MaxCaptureBytes = int(cfg.GetMaxCaptureBytes())
-	for signal, source := range map[Signal]*apiv1.OTLPConfig{SignalTraces: cfg.GetTraces(), SignalMetrics: cfg.GetMetrics(), SignalLogs: cfg.GetLogs()} {
+	for signal, source := range map[Signal]*configv1.OTLPConfig{SignalTraces: cfg.GetTraces(), SignalMetrics: cfg.GetMetrics(), SignalLogs: cfg.GetLogs()} {
 		if source == nil {
 			continue
 		}
@@ -38,7 +38,7 @@ func TelemetryConfigFromSettings(cfg *apiv1.TelemetryConfig) (TelemetryConfig, e
 
 // RuntimeConfig builds the per-agent ADK or BYO process configuration from the
 // controller's validated runtime defaults, without reading process environment.
-func RuntimeConfig(cfg *apiv1.RuntimeDefaultsConfig, name, namespace string) *adk.RuntimeConfig {
+func RuntimeConfig(cfg *configv1.RuntimeDefaultsConfig, name, namespace string) *adk.RuntimeConfig {
 	return &adk.RuntimeConfig{
 		ControlPlaneUrl: cfg.GetControlPlaneUrl(), GatewayUrl: cfg.GetGatewayUrl(),
 		Name: name, Namespace: namespace, LogLevel: cfg.GetLogging().GetLevel(), Port: new(uint32(80)),

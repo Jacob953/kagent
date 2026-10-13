@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	apiauthorization "github.com/kagent-dev/kagent/go/api/authorization"
-	apiv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/api/v1alpha1"
+	configv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/config/v1"
 	"github.com/kagent-dev/kagent/go/core/internal/grpcserver"
 	authimpl "github.com/kagent-dev/kagent/go/core/internal/httpserver/auth"
 	"github.com/kagent-dev/kagent/go/core/pkg/auth"
@@ -107,7 +107,7 @@ func TestNamespaceCache(t *testing.T) {
 }
 
 func TestPostgresConfig(t *testing.T) {
-	input := &apiv1.DatabaseConfig{VectorEnabled: true, Role: "kagent_app", Schema: new("kagent_test"), VectorSchema: new("vectors_test"), Pool: &apiv1.PostgresPoolConfig{
+	input := &configv1.DatabaseConfig{VectorEnabled: true, Role: "kagent_app", Schema: new("kagent_test"), VectorSchema: new("vectors_test"), Pool: &configv1.PostgresPoolConfig{
 		MaxConns: new(int32(8)), MinConns: 1, MaxConnIdleTime: durationpb.New(time.Minute), MaxConnLifetime: durationpb.New(10 * time.Minute),
 	}}
 	config := postgresConfig(input, "postgres://user:password@database/app")
@@ -139,7 +139,7 @@ func TestPostgresConfig(t *testing.T) {
 // which may reference them, so order is the contract here -- not membership.
 func TestExtraMigrationsAppendAfterBuiltins(t *testing.T) {
 	extra := []migrations.Source{{Name: "custom-track", Schema: "custom"}}
-	sources, err := migrationSources(&apiv1.DatabaseConfig{Schema: new("kagent_test"), VectorSchema: new("extensions")}, extra)
+	sources, err := migrationSources(&configv1.DatabaseConfig{Schema: new("kagent_test"), VectorSchema: new("extensions")}, extra)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +157,7 @@ func TestExtraMigrationsAppendAfterBuiltins(t *testing.T) {
 }
 
 func TestMigrationSourcesUseConfiguredSchemas(t *testing.T) {
-	sources, err := migrationSources(&apiv1.DatabaseConfig{VectorEnabled: true, Schema: new("tenant"), VectorSchema: new("vectors")}, nil)
+	sources, err := migrationSources(&configv1.DatabaseConfig{VectorEnabled: true, Schema: new("tenant"), VectorSchema: new("vectors")}, nil)
 	require.NoError(t, err)
 	require.Len(t, sources, 2)
 	for _, source := range sources {
@@ -167,7 +167,7 @@ func TestMigrationSourcesUseConfiguredSchemas(t *testing.T) {
 }
 
 func TestExtraMigrationsRequireSchema(t *testing.T) {
-	_, err := migrationSources(&apiv1.DatabaseConfig{Schema: new("kagent_test"), VectorSchema: new("extensions")}, []migrations.Source{{Name: "custom-track"}})
+	_, err := migrationSources(&configv1.DatabaseConfig{Schema: new("kagent_test"), VectorSchema: new("extensions")}, []migrations.Source{{Name: "custom-track"}})
 	if err == nil || err.Error() != `extra migration source "custom-track" must set Schema` {
 		t.Fatalf("migrationSources error = %v", err)
 	}
@@ -180,7 +180,7 @@ func TestSetupLoggerRejectsBadLevel(t *testing.T) {
 }
 
 func TestRunRejectsInvalidConfigBeforeIO(t *testing.T) {
-	cfg := &apiv1.ControllerConfig{}
+	cfg := &configv1.ControllerConfig{}
 	config.DefaultController(cfg)
 	require.ErrorContains(t, Run(t.Context(), cfg, Options{}), "database.url_file")
 	cfg.Database.UrlFile = "missing-secret"

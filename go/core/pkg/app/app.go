@@ -43,7 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	apiv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/api/v1alpha1"
+	configv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/config/v1"
 	kagentv1alpha3 "github.com/kagent-dev/kagent/go/api/v1alpha3"
 	"github.com/kagent-dev/kagent/go/core/internal/a2agateway"
 	"github.com/kagent-dev/kagent/go/core/internal/controller"
@@ -148,11 +148,11 @@ func SetupLogger(level string) error {
 // Run boots the controller and blocks until ctx is cancelled or a component
 // fails. It returns the first error rather than exiting, so a library consumer
 // keeps control of how the process ends.
-func Run(ctx context.Context, input *apiv1.ControllerConfig, opts Options) error {
+func Run(ctx context.Context, input *configv1.ControllerConfig, opts Options) error {
 	if input == nil {
 		return fmt.Errorf("controller configuration is required")
 	}
-	cfg := proto.Clone(input).(*apiv1.ControllerConfig)
+	cfg := proto.Clone(input).(*configv1.ControllerConfig)
 	config.DefaultController(cfg)
 	if err := config.Validate(cfg); err != nil {
 		return err
@@ -462,7 +462,7 @@ func mergePolicies(defaults grpcserver.MethodPolicies, extra map[string]auth.Acc
 	return merged, nil
 }
 
-func postgresConfig(cfg *apiv1.DatabaseConfig, source string) *database.PostgresConfig {
+func postgresConfig(cfg *configv1.DatabaseConfig, source string) *database.PostgresConfig {
 	return &database.PostgresConfig{URL: source, Role: cfg.GetRole(), VectorEnabled: cfg.GetVectorEnabled(),
 		Schema: cfg.GetSchema(), VectorSchema: cfg.GetVectorSchema(),
 		MaxConns: new(cfg.GetPool().GetMaxConns()), MinConns: new(cfg.GetPool().GetMinConns()),
@@ -471,7 +471,7 @@ func postgresConfig(cfg *apiv1.DatabaseConfig, source string) *database.Postgres
 
 // The built-in tracks must finish before extra sources, which must explicitly
 // name their schemas instead of relying on the connection's search path.
-func migrationSources(cfg *apiv1.DatabaseConfig, extra []migrations.Source) ([]migrations.Source, error) {
+func migrationSources(cfg *configv1.DatabaseConfig, extra []migrations.Source) ([]migrations.Source, error) {
 	for _, src := range extra {
 		if src.Schema == "" {
 			return nil, fmt.Errorf("extra migration source %q must set Schema", src.Name)

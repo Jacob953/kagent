@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	apiv1alpha1 "github.com/kagent-dev/kagent/go/api/gen/kagent/api/v1alpha1"
+	apiv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/api/v1"
 	"github.com/kagent-dev/kagent/go/core/internal/database"
 	"github.com/kagent-dev/kagent/go/core/internal/grpcserver"
 	sessionsvc "github.com/kagent-dev/kagent/go/core/internal/service/session"
@@ -45,15 +45,15 @@ func (httpTestAuthenticator) Authenticate(_ context.Context, headers http.Header
 }
 
 type httpTestShares struct {
-	permission apiv1alpha1.SessionSharePermission
+	permission apiv1.SessionSharePermission
 	sessionID  string
 	err        error
 	digest     []byte
 }
 
-func (s *httpTestShares) GetSessionShareByTokenHash(_ context.Context, digest []byte) (*apiv1alpha1.SessionShare, string, error) {
+func (s *httpTestShares) GetSessionShareByTokenHash(_ context.Context, digest []byte) (*apiv1.SessionShare, string, error) {
 	s.digest = digest
-	return &apiv1alpha1.SessionShare{SessionId: s.sessionID, Permission: s.permission}, "owner", s.err
+	return &apiv1.SessionShare{SessionId: s.sessionID, Permission: s.permission}, "owner", s.err
 }
 
 func newHTTPTestServer(t *testing.T, store *gatewayTestStore, authorizer auth.Authorizer, shares *httpTestShares) (*httptest.Server, *gatewayTestRuntime) {
@@ -94,7 +94,7 @@ func newGatewayTestTransport(t *testing.T, address string, protocol a2atype.Tran
 func TestGatewayCreatesConversationAndReusesInitialMessage(t *testing.T) {
 	for _, protocol := range []a2atype.TransportProtocol{a2atype.TransportProtocolJSONRPC, a2atype.TransportProtocolGRPC} {
 		t.Run(string(protocol), func(t *testing.T) {
-			store := &gatewayTestStore{created: map[string]*apiv1alpha1.Session{}}
+			store := &gatewayTestStore{created: map[string]*apiv1.Session{}}
 			runtime := &gatewayTestRuntime{}
 			authorizer := &gatewayTestAuthorizer{}
 			gateway := newTestGateway(store, authorizer, &gatewayTestDialer{client: gatewayTestClient(t, runtime)}, "")
@@ -325,15 +325,15 @@ func TestGatewaySharePermissionsAcrossTransports(t *testing.T) {
 		t.Run(string(protocol), func(t *testing.T) {
 			for _, test := range []struct {
 				name       string
-				permission apiv1alpha1.SessionSharePermission
+				permission apiv1.SessionSharePermission
 				sessionID  string
 				storeErr   error
 				wantStatus int
 				canRead    bool
 				canWrite   bool
 			}{
-				{name: "read only", permission: apiv1alpha1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_ONLY, sessionID: gatewayTestID, canRead: true},
-				{name: "read write", permission: apiv1alpha1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_WRITE, sessionID: gatewayTestID, canRead: true, canWrite: true},
+				{name: "read only", permission: apiv1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_ONLY, sessionID: gatewayTestID, canRead: true},
+				{name: "read write", permission: apiv1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_WRITE, sessionID: gatewayTestID, canRead: true, canWrite: true},
 				{name: "other session", sessionID: "12345678-1234-4234-8234-123456789abc"},
 				{name: "expired", storeErr: database.ErrNotFound, wantStatus: 403},
 				{name: "store unavailable", storeErr: errors.New("database credentials"), wantStatus: 500},
@@ -428,7 +428,7 @@ func TestEmbeddedPushAcrossTransports(t *testing.T) {
 	for _, protocol := range []a2atype.TransportProtocol{a2atype.TransportProtocolJSONRPC, a2atype.TransportProtocolGRPC} {
 		for _, streaming := range []bool{false, true} {
 			t.Run(fmt.Sprintf("%s/stream=%t", protocol, streaming), func(t *testing.T) {
-				store := &gatewayTestStore{created: map[string]*apiv1alpha1.Session{}}
+				store := &gatewayTestStore{created: map[string]*apiv1.Session{}}
 				runtime := &gatewayTestRuntime{}
 				runtime.onStream = func(req *a2atype.SendMessageRequest) {
 					store.task = &a2atype.Task{ID: "runtime-task", ContextID: req.Message.ContextID, Status: a2atype.TaskStatus{State: a2atype.TaskStateCompleted}}
