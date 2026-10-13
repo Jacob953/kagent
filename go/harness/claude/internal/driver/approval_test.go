@@ -303,7 +303,7 @@ func TestDeferredLaunchFailureKeepsOriginalInputWaiting(t *testing.T) {
 		require.NoError(t, err)
 	}
 	// A failed cancellation launch must also preserve the retryable request.
-	require.Error(t, pending.Cancel(t.Context()))
+	require.Error(t, pending.Cancel(t.Context(), &recordingSink{}))
 	saved, err := loadDeferred(b.directory, 1<<20)
 	require.NoError(t, err)
 	require.Equal(t, expected, saved)
@@ -326,7 +326,7 @@ func TestDeferredFailureAbandonsSession(t *testing.T) {
 			_, _, pending, err := driver.RestorePending()
 			require.NoError(t, err)
 			if cancel {
-				err = pending.Cancel(t.Context())
+				err = pending.Cancel(t.Context(), &recordingSink{})
 			} else {
 				_, err = pending.Resume(t.Context(), &runtime.ApprovalDecision{ID: r.RequestID, Approved: true}, &recordingSink{})
 			}
