@@ -1,29 +1,25 @@
 package translator
 
-import "regexp"
+import (
+	"regexp"
 
-// BuiltinImages supplies release images without performing registry I/O.
-// Missing entries only prevent compilation of agents that need that default.
-type BuiltinImages struct {
-	Kagent string
-	Claude string
-	Codex  string
-}
+	apiv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/api/v1alpha1"
+)
 
 var pinnedHarnessImage = regexp.MustCompile(`^[^[:space:]@]+@sha256:[a-f0-9]{64}$`)
 
-func (b BuiltinImages) image(harness *HarnessConfiguration) (string, error) {
+func harnessImage(harness *HarnessConfiguration, images *apiv1.HarnessImagesConfig) (string, error) {
 	var image string
 	if override := harness.Spec.Workload.Image; override != nil {
 		image = *override
 	} else {
 		switch harnessType(harness) {
 		case HarnessTypeKagent:
-			image = b.Kagent
+			image = images.GetKagent()
 		case HarnessTypeClaude:
-			image = b.Claude
+			image = images.GetClaude()
 		case HarnessTypeCodex:
-			image = b.Codex
+			image = images.GetCodex()
 		case HarnessTypeBYO:
 			return "", NewValidationError("BYO harnesses must specify workload.image")
 		}
