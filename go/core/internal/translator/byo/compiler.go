@@ -13,6 +13,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/kagent-dev/kagent/go/api/adk"
+	apiv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/core/internal/translator"
 	"github.com/kagent-dev/kagent/go/core/internal/translator/adkconfig"
 	"github.com/kagent-dev/kagent/go/pkg/tracing"
@@ -21,12 +22,12 @@ import (
 // Compiler translates resolved inputs into a BYO A2A runtime revision.
 type Compiler struct {
 	config   *adkconfig.Builder
-	settings translator.CompilerSettings
+	settings *apiv1.RuntimeDefaultsConfig
 }
 
 var _ translator.HarnessCompiler = (*Compiler)(nil)
 
-func NewCompiler(ctx krt.HandlerContext, collections translator.Collections, settings translator.CompilerSettings) *Compiler {
+func NewCompiler(ctx krt.HandlerContext, collections translator.Collections, settings *apiv1.RuntimeDefaultsConfig) *Compiler {
 	return &Compiler{settings: settings, config: adkconfig.NewBuilder(ctx, collections)}
 }
 
@@ -37,7 +38,7 @@ func (c *Compiler) Compile(ctx context.Context, input *translator.HarnessInput) 
 	}
 	template, harness := input.Root.Template, input.Harness
 	configJSON, err := adk.Marshal(&adk.Config{
-		Runtime: c.settings.RuntimeConfig(input.AgentName, template.Namespace),
+		Runtime: translator.RuntimeConfig(c.settings, input.AgentName, template.Namespace),
 		Agent:   compiled.Config,
 	})
 	if err != nil {
@@ -48,7 +49,10 @@ func (c *Compiler) Compile(ctx context.Context, input *translator.HarnessInput) 
 		return nil, fmt.Errorf("convert agent card: %w", err)
 	}
 	// An opaque image may export to its own backend, so its own values win.
-	telemetryConfig := c.settings.Telemetry
+	telemetryConfig, err := translator.TelemetryConfigFromSettings(c.settings.GetTelemetry())
+	if err != nil {
+		return nil, err
+	}
 	environment := append([]corev1.EnvVar(nil), compiled.Environment...)
 	environment = append(environment, adkconfig.HarnessEnvironment(harness)...)
 	environment = adkconfig.DedupeEnv(environment)
@@ -66,7 +70,7 @@ func (c *Compiler) Compile(ctx context.Context, input *translator.HarnessInput) 
 		return nil, err
 	}
 	compiled.Egress = append(compiled.Egress, telemetryConfig.Destinations(environment)...)
-	compiled.Egress = append(compiled.Egress, c.settings.APIURL)
+	compiled.Egress = append(compiled.Egress, c.settings.GetControlPlaneUrl())
 	slices.Sort(compiled.Egress)
 
 	return &translator.CompileResult{Revision: translator.Revision{

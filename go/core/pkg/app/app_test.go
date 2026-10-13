@@ -108,7 +108,7 @@ func TestNamespaceCache(t *testing.T) {
 
 func TestPostgresConfig(t *testing.T) {
 	input := &apiv1.DatabaseConfig{VectorEnabled: true, Role: "kagent_app", Schema: new("kagent_test"), VectorSchema: new("vectors_test"), Pool: &apiv1.PostgresPoolConfig{
-		MaxConns: new(int32(8)), MinConns: new(int32(1)), MaxConnIdleTime: durationpb.New(time.Minute), MaxConnLifetime: durationpb.New(10 * time.Minute),
+		MaxConns: new(int32(8)), MinConns: 1, MaxConnIdleTime: durationpb.New(time.Minute), MaxConnLifetime: durationpb.New(10 * time.Minute),
 	}}
 	config := postgresConfig(input, "postgres://user:password@database/app")
 	if config.URL != "postgres://user:password@database/app" || !config.VectorEnabled {

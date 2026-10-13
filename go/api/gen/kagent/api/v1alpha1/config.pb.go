@@ -916,7 +916,7 @@ func (x *DatabaseConfig) GetVectorSchema() string {
 
 type PostgresPoolConfig struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	MinConns        *int32                 `protobuf:"varint,1,opt,name=min_conns,json=minConns,proto3,oneof" json:"min_conns,omitempty"`
+	MinConns        int32                  `protobuf:"varint,1,opt,name=min_conns,json=minConns,proto3" json:"min_conns,omitempty"`
 	MaxConns        *int32                 `protobuf:"varint,2,opt,name=max_conns,json=maxConns,proto3,oneof" json:"max_conns,omitempty"`
 	MaxConnIdleTime *durationpb.Duration   `protobuf:"bytes,3,opt,name=max_conn_idle_time,json=maxConnIdleTime,proto3" json:"max_conn_idle_time,omitempty"`
 	MaxConnLifetime *durationpb.Duration   `protobuf:"bytes,4,opt,name=max_conn_lifetime,json=maxConnLifetime,proto3" json:"max_conn_lifetime,omitempty"`
@@ -955,8 +955,8 @@ func (*PostgresPoolConfig) Descriptor() ([]byte, []int) {
 }
 
 func (x *PostgresPoolConfig) GetMinConns() int32 {
-	if x != nil && x.MinConns != nil {
-		return *x.MinConns
+	if x != nil {
+		return x.MinConns
 	}
 	return 0
 }
@@ -1909,17 +1909,15 @@ const file_kagent_api_v1alpha1_config_proto_rawDesc = "" +
 	"\x06schema\x18\x06 \x01(\tB!\xbaH\x1er\x1c\x18?2\x18^[a-zA-Z_][a-zA-Z0-9_]*$H\x00R\x06schema\x88\x01\x01\x12K\n" +
 	"\rvector_schema\x18\a \x01(\tB!\xbaH\x1er\x1c\x18?2\x18^[a-zA-Z_][a-zA-Z0-9_]*$H\x01R\fvectorSchema\x88\x01\x01B\t\n" +
 	"\a_schemaB\x10\n" +
-	"\x0e_vector_schema\"\xd0\x03\n" +
-	"\x12PostgresPoolConfig\x12)\n" +
-	"\tmin_conns\x18\x01 \x01(\x05B\a\xbaH\x04\x1a\x02(\x00H\x00R\bminConns\x88\x01\x01\x12)\n" +
-	"\tmax_conns\x18\x02 \x01(\x05B\a\xbaH\x04\x1a\x02 \x00H\x01R\bmaxConns\x88\x01\x01\x12X\n" +
+	"\x0e_vector_schema\"\xa2\x03\n" +
+	"\x12PostgresPoolConfig\x12$\n" +
+	"\tmin_conns\x18\x01 \x01(\x05B\a\xbaH\x04\x1a\x02(\x00R\bminConns\x12)\n" +
+	"\tmax_conns\x18\x02 \x01(\x05B\a\xbaH\x04\x1a\x02 \x00H\x00R\bmaxConns\x88\x01\x01\x12X\n" +
 	"\x12max_conn_idle_time\x18\x03 \x01(\v2\x19.google.protobuf.DurationB\x10\xbaH\r\xaa\x01\n" +
 	"\"\x06\b\x84\xfa\x85\xae\"*\x00R\x0fmaxConnIdleTime\x12W\n" +
 	"\x11max_conn_lifetime\x18\x04 \x01(\v2\x19.google.protobuf.DurationB\x10\xbaH\r\xaa\x01\n" +
-	"\"\x06\b\x84\xfa\x85\xae\"*\x00R\x0fmaxConnLifetime:\x94\x01\xbaH\x90\x01\x1a\x8d\x01\n" +
-	"\x14postgres_pool.bounds\x12#min_conns must not exceed max_conns\x1aP!has(this.min_conns) || !has(this.max_conns) || this.min_conns <= this.max_connsB\f\n" +
-	"\n" +
-	"_min_connsB\f\n" +
+	"\"\x06\b\x84\xfa\x85\xae\"*\x00R\x0fmaxConnLifetime:z\xbaHw\x1au\n" +
+	"\x14postgres_pool.bounds\x12#min_conns must not exceed max_conns\x1a8!has(this.max_conns) || this.min_conns <= this.max_connsB\f\n" +
 	"\n" +
 	"_max_conns\"\xe6\x01\n" +
 	"\x0fSubstrateConfig\x12/\n" +
