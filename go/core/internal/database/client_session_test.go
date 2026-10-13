@@ -36,7 +36,7 @@ func TestMalformedDatabaseIDsReturnErrors(t *testing.T) {
 			return err
 		}},
 		{"create share", func() error {
-			_, err := client.CreateSessionShare(ctx, &apiv1alpha1.SessionShare{Id: uuid.NewString(), SessionId: "invalid", Permission: apiv1alpha1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_ONLY}, []byte("token"), "alice")
+			_, err := client.CreateSessionShare(ctx, &apiv1alpha1.SessionShare{Id: uuid.NewString(), SessionId: "invalid"}, []byte("token"), "alice")
 			return err
 		}},
 		{"create task", func() error {
@@ -852,7 +852,6 @@ func TestSessionShareCreationRequiresOwner(t *testing.T) {
 	require.NoError(t, err)
 	share := &apiv1alpha1.SessionShare{
 		Id: uuid.NewString(), SessionId: session.Id,
-		Permission: apiv1alpha1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_ONLY,
 	}
 	_, err = client.CreateSessionShare(ctx, share, []byte("token"), "bob")
 	require.ErrorIs(t, err, ErrNotFound)
@@ -880,8 +879,7 @@ func TestSessionShareExpiry(t *testing.T) {
 	newShare := func(expiresAt time.Time) *apiv1alpha1.SessionShare {
 		return &apiv1alpha1.SessionShare{
 			Id: uuid.NewString(), SessionId: session.Id,
-			Permission: apiv1alpha1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_WRITE,
-			ExpiresAt:  timestamppb.New(expiresAt),
+			ExpiresAt: timestamppb.New(expiresAt),
 		}
 	}
 
@@ -919,7 +917,7 @@ func TestDeletedSessionPreservesRequestIdentityAndHidesAccess(t *testing.T) {
 	require.NoError(t, err)
 	task.Status.State = a2a.TaskStateInputRequired
 	require.NoError(t, saveRuntimeTask(t, client, session.Id, task, task, nil))
-	share := &apiv1alpha1.SessionShare{Id: uuid.NewString(), SessionId: session.Id, Permission: apiv1alpha1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_WRITE}
+	share := &apiv1alpha1.SessionShare{Id: uuid.NewString(), SessionId: session.Id}
 	_, err = client.CreateSessionShare(ctx, share, []byte("token"), "alice")
 	require.NoError(t, err)
 	require.NoError(t, deleteSession(ctx, client, session.Id))
@@ -969,7 +967,7 @@ func TestShareCreationRacesSessionDeletion(t *testing.T) {
 		session, _, err := client.CreateSession(ctx, newSessionRequest(uuid.NewString(), "assistant", "kagent", ""), uuid.NewString())
 		require.NoError(t, err)
 		token := []byte(uuid.NewString())
-		share := &apiv1alpha1.SessionShare{Id: uuid.NewString(), SessionId: session.Id, Permission: apiv1alpha1.SessionSharePermission_SESSION_SHARE_PERMISSION_READ_ONLY}
+		share := &apiv1alpha1.SessionShare{Id: uuid.NewString(), SessionId: session.Id}
 		start := make(chan struct{})
 		shared, deleted := make(chan error, 1), make(chan error, 1)
 		go func() {
