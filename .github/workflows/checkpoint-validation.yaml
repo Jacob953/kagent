@@ -40,7 +40,7 @@ jobs:
         fetch-tags: true
         persist-credentials: false
     - name: Verify production sources match PR head
-      run: 'git diff --exit-code 238ef3d246d677ed7e95e24babccef4707e5127e HEAD --
+      run: 'git diff --exit-code 69d32f3acfbb7e4c5fafa30a3734ea80c54f0c24 HEAD --
         . '':!.github/workflows/checkpoint-validation.yaml''
 
 '
@@ -331,7 +331,7 @@ jobs:
         fetch-tags: true
         persist-credentials: false
     - name: Verify production sources match PR head
-      run: 'git diff --exit-code 238ef3d246d677ed7e95e24babccef4707e5127e HEAD --
+      run: 'git diff --exit-code 69d32f3acfbb7e4c5fafa30a3734ea80c54f0c24 HEAD --
         . '':!.github/workflows/checkpoint-validation.yaml''
 
 '
@@ -395,7 +395,7 @@ jobs:
         fetch-tags: true
         persist-credentials: false
     - name: Verify production sources match PR head
-      run: 'git diff --exit-code 238ef3d246d677ed7e95e24babccef4707e5127e HEAD --
+      run: 'git diff --exit-code 69d32f3acfbb7e4c5fafa30a3734ea80c54f0c24 HEAD --
         . '':!.github/workflows/checkpoint-validation.yaml''
 
 '
@@ -439,3 +439,41 @@ jobs:
         kubectl logs -n kagent deployment/kagent-controller || true
     name: Published-release rolling upgrade
     timeout-minutes: 100
+  checkpoint-postgres:
+    name: PostgreSQL expiry and ownership regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+    - name: Check out validation subject
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+        persist-credentials: false
+    - name: Verify production sources match PR head
+      run: 'git diff --exit-code 69d32f3acfbb7e4c5fafa30a3734ea80c54f0c24 HEAD --
+        . '':!.github/workflows/checkpoint-validation.yaml''
+
+'
+    - name: Set up Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+      with:
+        go-version-file: go/go.mod
+        cache: false
+    - name: Cache E2E Go dependencies and build
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: e2e-go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go/go.mod',
+          'go/go.sum') }}
+        restore-keys: 'e2e-go-${{ runner.os }}-${{ runner.arch }}-
+
+'
+    - name: Exercise expiry after lock waits and existing claim fences
+      working-directory: go
+      run: 'go test -race -count=3 -shuffle=on -run ''^Test(CheckpointCompletionRejectsExpiryDuringLockWait|CheckpointClaimsFenceCompletionAndDeletion|FailedCheckpointCollectionPreservesRequestAndFencesCleanup|CanceledCheckpointClaimCannotCommitAfterRelease|CheckpointReleaseWaitsForClaimCommit|InlineSQLPrepares)$''
+        ./core/internal/database
+
+'
