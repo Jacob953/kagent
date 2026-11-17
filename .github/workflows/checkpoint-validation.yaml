@@ -4,6 +4,7 @@ name: Checkpoint independent validation
   push:
     branches:
     - validate/checkpoint-238ef3d2
+  workflow_dispatch: {}
 permissions:
   contents: read
   actions: write
