@@ -40,7 +40,7 @@ jobs:
         fetch-tags: true
         persist-credentials: false
     - name: Verify production sources match PR head
-      run: 'git diff --exit-code 69d32f3acfbb7e4c5fafa30a3734ea80c54f0c24 HEAD --
+      run: 'git diff --exit-code 3cfcf03c7465fe2021045b55b03eaa5c291a63c2 HEAD --
         . '':!.github/workflows/checkpoint-validation.yaml''
 
 '
@@ -95,12 +95,12 @@ jobs:
         use: 'true'
         driver-opts: network=host
     - name: Set up Helm
-      uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310
+      uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e
       with:
         version: v3.18.0
     - name: Install Kind
       id: kind
-      uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa
+      uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376
       with:
         version: v0.33.0
         install_only: true
@@ -111,8 +111,7 @@ jobs:
       env:
         OPENAI_API_KEY: fake
       run: |
-        # Reuse Blacksmith's persistent layers and Go cache mounts. The Makefile
-        # otherwise selects a fresh local builder, discarding that cache.
+        # Reuse the named builder and its cache mounts.
         BUILDX_BUILDER_NAME=$(docker buildx inspect | awk '$1 == "Name:" { print $2; exit }')
         test -n "$BUILDX_BUILDER_NAME"
         export BUILDX_BUILDER_NAME
@@ -154,6 +153,8 @@ jobs:
               port: http
             periodSeconds: 1
         config:
+          sessions:
+            automaticRecovery: true
           push:
             allowHttp: true
             allowPrivateNetworks: true
@@ -175,6 +176,8 @@ jobs:
         ui:
           replicas: 0
         kagent-tools:
+          enabled: false
+        examples:
           enabled: false
         substrateWorkerPool:
           create: true
@@ -331,7 +334,7 @@ jobs:
         fetch-tags: true
         persist-credentials: false
     - name: Verify production sources match PR head
-      run: 'git diff --exit-code 69d32f3acfbb7e4c5fafa30a3734ea80c54f0c24 HEAD --
+      run: 'git diff --exit-code 3cfcf03c7465fe2021045b55b03eaa5c291a63c2 HEAD --
         . '':!.github/workflows/checkpoint-validation.yaml''
 
 '
@@ -349,13 +352,13 @@ jobs:
       uses: "./.github/actions/upgrade-test-setup"
       with:
         upgrade-from: "${{ matrix.upgrade-from }}"
-    - name: Require the published v1.0.0 baseline to execute
+    - name: Require the published v1.0.1 baseline to execute
       env:
         BASELINE: "${{ steps.prep.outputs.version }}"
         SKIP: "${{ steps.prep.outputs.skip }}"
       run: |
         test "$SKIP" != true
-        test "$BASELINE" = 1.0.0
+        test "$BASELINE" = 1.0.1
     - name: Run upgrade tests
       if: steps.prep.outputs.skip != 'true'
       env:
@@ -395,7 +398,7 @@ jobs:
         fetch-tags: true
         persist-credentials: false
     - name: Verify production sources match PR head
-      run: 'git diff --exit-code 69d32f3acfbb7e4c5fafa30a3734ea80c54f0c24 HEAD --
+      run: 'git diff --exit-code 3cfcf03c7465fe2021045b55b03eaa5c291a63c2 HEAD --
         . '':!.github/workflows/checkpoint-validation.yaml''
 
 '
@@ -413,13 +416,13 @@ jobs:
       uses: "./.github/actions/upgrade-test-setup"
       with:
         upgrade-from: "${{ matrix.upgrade-from }}"
-    - name: Require the published v1.0.0 baseline to execute
+    - name: Require the published v1.0.1 baseline to execute
       env:
         BASELINE: "${{ steps.prep.outputs.version }}"
         SKIP: "${{ steps.prep.outputs.skip }}"
       run: |
         test "$SKIP" != true
-        test "$BASELINE" = 1.0.0
+        test "$BASELINE" = 1.0.1
     - name: Run rolling upgrade tests
       if: steps.prep.outputs.skip != 'true'
       env:
@@ -451,7 +454,7 @@ jobs:
         fetch-tags: true
         persist-credentials: false
     - name: Verify production sources match PR head
-      run: 'git diff --exit-code 69d32f3acfbb7e4c5fafa30a3734ea80c54f0c24 HEAD --
+      run: 'git diff --exit-code 3cfcf03c7465fe2021045b55b03eaa5c291a63c2 HEAD --
         . '':!.github/workflows/checkpoint-validation.yaml''
 
 '
